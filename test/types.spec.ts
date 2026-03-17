@@ -45,18 +45,12 @@ describe('http-proxy-middleware TypeScript Types', () => {
       const proxy = middleware({ ...options, pathFilter: (path, req) => true });
       expect(proxy).toBeDefined();
     });
-
-    it('should create proxy with manual websocket upgrade function', () => {
-      const proxy = middleware({ ...options, pathFilter: (path, req) => true });
-      expect(proxy.upgrade).toBeDefined();
-    });
   });
 
   describe('http-proxy options', () => {
     it('should extend from http-proxy options', () => {
       options = {
         target: 'http://example',
-        ws: true,
       };
       expect(options).toBeDefined();
     });
@@ -137,10 +131,7 @@ describe('http-proxy-middleware TypeScript Types', () => {
           on: {
             error: (error, req, res, target) => {},
             proxyReq: (proxyReq, req, res, options) => {},
-            proxyReqWs: (proxyReq, req, socket, options) => {},
             proxyRes: (proxyRes, req, res) => {},
-            open: (proxySocket) => {},
-            close: (proxyRes, proxySocket, proxyHead) => {},
             start: (req, res, target) => {},
             end: (req, res, proxyRes) => {},
             econnreset: (error, req, res, target) => {},
@@ -196,15 +187,9 @@ describe('http-proxy-middleware TypeScript Types', () => {
               req.params;
               res.status(200).send('OK');
             },
-            proxyReqWs(proxyReq, req, socket, options, head) {
-              req.params;
-            },
             proxyRes(proxyRes, req, res) {
               req.params;
               res.status(200).send('OK');
-            },
-            close(proxyRes, proxySocket, proxyHead) {
-              proxyRes.params;
             },
             start(req, res, target) {
               req.params;
@@ -247,15 +232,9 @@ describe('http-proxy-middleware TypeScript Types', () => {
               req.params;
               res.status(200).send('OK');
             },
-            proxyReqWs(proxyReq, req, socket, options, head) {
-              req.params;
-            },
             proxyRes(proxyRes, req, res) {
               req.params;
               res.status(200).send('OK');
-            },
-            close(proxyRes, proxySocket, proxyHead) {
-              proxyRes.params;
             },
             start(req, res, target) {
               req.params;
@@ -303,15 +282,9 @@ describe('http-proxy-middleware TypeScript Types', () => {
             req.myRequestParams;
             res.myResponseParams;
           },
-          proxyReqWs(proxyReq, req, socket, options, head) {
-            req.myRequestParams;
-          },
           proxyRes(proxyRes, req, res) {
             req.myRequestParams;
             res.myResponseParams;
-          },
-          close(proxyRes, proxySocket, proxyHead) {
-            proxyRes.myRequestParams;
           },
           start(req, res, target) {
             req.myRequestParams;

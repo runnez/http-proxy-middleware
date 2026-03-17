@@ -1,8 +1,7 @@
 import type * as http from 'node:http';
 import type * as https from 'node:https';
-import type * as net from 'node:net';
 
-import * as httpProxy from 'http-proxy';
+import HttpProxy from '@runnez/http-proxy-modern';
 
 import { verifyConfig } from './configuration';
 import { Debug as debug } from './debug';
@@ -15,10 +14,9 @@ import type { Filter, Logger, Options, RequestHandler } from './types';
 import { getFunctionName } from './utils/function';
 
 export class HttpProxyMiddleware<TReq, TRes> {
-  private wsInternalSubscribed = false;
   private serverOnCloseSubscribed = false;
   private proxyOptions: Options<TReq, TRes>;
-  private proxy: httpProxy<TReq, TRes>;
+  private proxy: HttpProxy<TReq, TRes>;
   private pathRewriter;
   private logger: Logger;
 
@@ -28,19 +26,11 @@ export class HttpProxyMiddleware<TReq, TRes> {
     this.logger = getLogger(options as unknown as Options);
 
     debug(`create proxy server`);
-    this.proxy = httpProxy.createProxyServer({});
+    this.proxy = HttpProxy.createProxyServer({});
 
     this.registerPlugins(this.proxy, this.proxyOptions);
 
     this.pathRewriter = PathRewriter.createPathRewriter(this.proxyOptions.pathRewrite); // returns undefined when "pathRewrite" is not provided
-
-    // https://github.com/chimurai/http-proxy-middleware/issues/19
-    // expose function to upgrade externally
-    this.middleware.upgrade = (req, socket, head) => {
-      if (!this.wsInternalSubscribed) {
-        this.handleUpgrade(req, socket, head);
-      }
-    };
   }
 
   // https://github.com/Microsoft/TypeScript/wiki/'this'-in-TypeScript#red-flags-for-this
@@ -74,44 +64,15 @@ export class HttpProxyMiddleware<TReq, TRes> {
       });
       this.serverOnCloseSubscribed = true;
     }
-
-    if (this.proxyOptions.ws === true) {
-      // use initial request to access the server object to subscribe to http upgrade event
-      this.catchUpgradeRequest(server);
-    }
   }) as RequestHandler;
 
-  private registerPlugins(proxy: httpProxy<TReq, TRes>, options: Options<TReq, TRes>) {
+  private registerPlugins(proxy: HttpProxy<TReq, TRes>, options: Options<TReq, TRes>) {
     const plugins = getPlugins<TReq, TRes>(options);
     plugins.forEach((plugin) => {
       debug(`register plugin: "${getFunctionName(plugin)}"`);
       plugin(proxy, options);
     });
   }
-
-  private catchUpgradeRequest = (server: https.Server) => {
-    if (!this.wsInternalSubscribed) {
-      debug('subscribing to server upgrade event');
-      server.on('upgrade', this.handleUpgrade);
-      // prevent duplicate upgrade handling;
-      // in case external upgrade is also configured
-      this.wsInternalSubscribed = true;
-    }
-  };
-
-  private handleUpgrade = async (req: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
-    try {
-      if (this.shouldProxy(this.proxyOptions.pathFilter, req)) {
-        const activeProxyOptions = await this.prepareProxyRequest(req);
-        this.proxy.ws(req, socket, head, activeProxyOptions);
-        debug('server upgrade event received. Proxying WebSocket');
-      }
-    } catch (err) {
-      // This error does not include the URL as the fourth argument as we won't
-      // have the URL if `this.prepareProxyRequest` throws an error.
-      this.proxy.emit('error', err, req, socket);
-    }
-  };
 
   /**
    * Determine whether request should be proxied.
@@ -138,15 +99,6 @@ export class HttpProxyMiddleware<TReq, TRes> {
    * @return {Object} proxy options
    */
   private prepareProxyRequest = async (req: http.IncomingMessage) => {
-    /**
-     * Incorrect usage confirmed: https://github.com/expressjs/express/issues/4854#issuecomment-1066171160
-     * Temporary restore req.url patch for {@link src/legacy/create-proxy-middleware.ts legacyCreateProxyMiddleware()}
-     * FIXME: remove this patch in future release
-     */
-    if ((this.middleware as unknown as any).__LEGACY_HTTP_PROXY_MIDDLEWARE__) {
-      req.url = (req as unknown as any).originalUrl || req.url;
-    }
-
     const newProxyOptions = Object.assign({}, this.proxyOptions);
 
     // Apply in order:

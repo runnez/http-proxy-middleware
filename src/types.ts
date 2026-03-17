@@ -5,7 +5,8 @@
 import type * as http from 'node:http';
 import type * as net from 'node:net';
 
-import type * as httpProxy from 'http-proxy';
+import type HttpProxy from '@runnez/http-proxy-modern';
+import type * as httpProxy from '@runnez/http-proxy-modern';
 
 export type NextFunction<T = (err?: any) => void> = T;
 
@@ -24,16 +25,13 @@ export type Filter<TReq = http.IncomingMessage> =
   | ((pathname: string, req: TReq) => boolean);
 
 export interface Plugin<TReq = http.IncomingMessage, TRes = http.ServerResponse> {
-  (proxyServer: httpProxy<TReq, TRes>, options: Options<TReq, TRes>): void;
+  (proxyServer: HttpProxy<TReq, TRes>, options: Options<TReq, TRes>): void;
 }
 
 export interface OnProxyEvent<TReq = http.IncomingMessage, TRes = http.ServerResponse> {
   error?: httpProxy.ErrorCallback<Error, TReq, TRes>;
   proxyReq?: httpProxy.ProxyReqCallback<http.ClientRequest, TReq, TRes>;
-  proxyReqWs?: httpProxy.ProxyReqWsCallback<http.ClientRequest, TReq>;
   proxyRes?: httpProxy.ProxyResCallback<TReq, TRes>;
-  open?: httpProxy.OpenCallback;
-  close?: httpProxy.CloseCallback<TReq>;
   start?: httpProxy.StartCallback<TReq, TRes>;
   end?: httpProxy.EndCallback<TReq, TRes>;
   econnreset?: httpProxy.EconnresetCallback<Error, TReq, TRes>;

@@ -13,10 +13,7 @@ const debug = Debug.extend('proxy-events-plugin');
  *  on: {
  *    error: (error, req, res, target) => {},
  *    proxyReq: (proxyReq, req, res, options) => {},
- *    proxyReqWs: (proxyReq, req, socket, options) => {},
  *    proxyRes: (proxyRes, req, res) => {},
- *    open: (proxySocket) => {},
- *    close: (proxyRes, proxySocket, proxyHead) => {},
  *    start: (req, res, target) => {},
  *    end: (req, res, proxyRes) => {},
  *    econnreset: (error, req, res, target) => {},

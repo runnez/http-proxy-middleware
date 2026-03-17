@@ -1,5 +1,4 @@
 import type * as http from 'node:http';
-import * as url from 'node:url';
 
 import * as isGlob from 'is-glob';
 import * as micromatch from 'micromatch';
@@ -88,7 +87,12 @@ function matchMultiPath(pathFilterList: string[], uri?: string) {
  * @return {String}     RFC 3986 path
  */
 function getUrlPathName(uri?: string) {
-  return uri && url.parse(uri).pathname;
+  if (!uri) return uri;
+  try {
+    return new URL(uri).pathname;
+  } catch {
+    return new URL(uri, 'http://localhost').pathname;
+  }
 }
 
 function isStringPath(pathFilter: string) {
